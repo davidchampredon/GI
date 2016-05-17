@@ -1,0 +1,12 @@
+Package: GI
+Type: Package
+Title: Compute generation interval distributions of epidemic models
+Version: 1.1
+Date: 2016-05-13
+Author: David Champredon
+Maintainer: David Champredon <david.champredon@gmail.com>
+Description: Calculate intrinsic, forward and backward generation interval distribution for several epidemic models. For theoretical framework, see Champredon & Dushoff J in Proceedings of the Royal Society B (2015)
+License: GPL-3
+Depends:
+    deSolve
+RoxygenNote: 5.0.1

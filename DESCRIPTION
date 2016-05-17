@@ -10,3 +10,6 @@ License: GPL-3
 Depends:
     deSolve
 RoxygenNote: 5.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr

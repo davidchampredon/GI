@@ -5,7 +5,7 @@ See [1] for theoretical framework.
 
 To install:
  * if necessary: `install.packages(devtools)`
- * `install_github("davidchampredon/GI")`
+ * `library(devtools) ; install_github("davidchampredon/GI", build_vignettes = TRUE, force=TRUE)`
  
 Reference:
 

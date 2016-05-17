@@ -75,7 +75,7 @@ Now, let's define the (calendar) times where we want to calculate the forward an
 cal.times.fwdbck <- seq(5, horizon-10, by=5)
 ```
 Let's call the `GI.seminr` function to calculate all three generation interval distributions at these calendar times:
-```{r,cache=T}
+```{r,cache=F}
 g <- GI.seminr(latent_mean, infectious_mean, R0, nE,nI, cal.times.fwdbck,horizon)
 ```
 The results are stored in list, so lets retrieve them:
@@ -115,11 +115,142 @@ plot(x=g.fwd$tsi[[1]], y = g.fwd$density[[1]],
 for(i in 1:length(g.fwd$tsi)) 
 	lines(x=g.fwd$tsi[[i]],g.fwd$density[[i]],col=rgb(0,0,0,0.2))
 ```
-Each grey line represents the distribution at a different calendar time, we can see that it is different. 
+Each grey line represents the distribution at a different calendar times, we can see that it is different. 
+
+Apart from the fact that the distribution changes, it is not really clear to see a pattern. So let's plot the mean of the forward generation interval distribution throughout the epidemic (i.e. calendar times):
+```{r,fig.width=7}
+fbar <- g[['fwd.mean']]
+plot(x=cal.times.fwdbck, y=fbar,
+	 typ='o', las = 1, 
+	 main = 'Mean of the forward generation interval distribution',
+	 xlab = 'calendar time', ylab ='')
+grid()
+```
+Each circle is the mean of the distribution calculated at a given calendar time. 
+
+We can do exactly the same analysis for the backward generation interval distribution:
+```{r,fig.width=7}
+plot(x=g.bck$tsi[[length(g.bck$tsi)]], g.bck$density[[length(g.bck$tsi)]],
+	 main = 'Backward generation interval distribution',
+	 xlab = 'time since infection', ylab ='', yaxt='n',
+	 xlim = c(0,30),
+	 typ='l',ylim=c(0,0.2),col=rgb(0,0,0,0.2))
+for(i in 1:length(g.bck$tsi)) 
+	lines(x=g.bck$tsi[[i]],g.bck$density[[i]],col=rgb(0,0,0,0.2))
+
+bbar <- g[['bck.mean']]
+plot(cal.times.fwdbck,bbar,
+	 typ='o',las = 1,
+	 main = 'Mean of the backward generation interval distribution',
+	 xlab = 'calendar time', ylab ='')
+grid()
+```
+
 
 
 
 ### Example with RESuDe model
+
+The exact same analysis as the one done with a SEmInR can be performed with a RESuDe model. The only difference is the way to set up the RESuDe model and the function to call is now `GI.resude` (instead of `GI.seminr`). Also, because RESuDe is _defined_ by explictly giving the _intrinsic_ generation interval distribution (with the `GI_type`, `GI_mean` and `GI_var` parameters), only the forward and backward generation interval distribution are calculated in this case. 
+
+Here is the code to replicate with RESuDe what was done for SEmInR.
+
+```{r,fig.width=7}
+library(GI)
+
+### Parameters for RESuDe model
+R0 <- 4
+horizon <- 100
+I.init <- 1
+pop_size <- 1e4
+alpha <- 0
+kappa <- 0
+GI_type <- 'pois'  # 'pois' or 'nbinom'
+GI_span <- 20
+GI_mean <- 8
+GI_var <- GI_mean + 2  # used only if GI_type='nbinom'
+
+# Calendar times where the forward and 
+# backward generation interval distributions
+# will be calculated:
+cal.times.fwdbck <- seq(GI_span-2, horizon - 4, by = 1)
+
+# Calculate generation interval distributions:
+G <- GI.resude(cal.times.fwdbck,
+				R0,
+				alpha,
+				kappa,
+				GI_span,
+				GI_mean,
+				GI_var,
+				GI_type,
+				horizon,
+				pop_size = pop_size,
+				I.init = I.init)
+
+# Retrieve results:
+gi <- G$intrinsic
+gbck <- G$bck
+gfwd <- G$fwd
+
+
+###  PLOTS  ###
+
+par(mfrow=c(1,1)) 
+
+# Epidemic time series
+plot(G$susceptible,
+	 xlab = 'calendar time', ylab='', 
+	 main='Number of susceptibles',
+	 typ='l')
+grid()
+plot(G$incidence,typ='l',
+	 xlab = 'calendar time', ylab='', 
+	 main = 'Incidence')
+grid()
+
+# GI Distributions:
+plot(x=gi$tsi, y=gi$density,
+	 main = 'Backward GI distributions\n at requested calendar times',
+	 xlab = 'time since infection', ylab='',yaxt='n',
+	 ylim = c(0,1.2*max(gi$density)),
+	 pch=16)
+for(i in 1:length(cal.times.fwdbck)){
+	gb <- gbck$density[[i]]
+	lines(x = gbck$tsi[1:length(gb)], y = gb, typ='l', col = rgb(0,0,1,0.2))
+}
+legend(x='topright',lwd = c(1,0),legend = c('backward','intrinsic'),pch=c(NA,16))
+
+plot(x=gi$tsi, y=gi$density,
+	 main = 'Forward GI distributions\n at requested calendar times',
+	 xlab = 'time since infection', ylab='',yaxt='n',
+	 ylim = c(0,1.2*max(gi$density)),
+	 pch=16)
+for(i in 1:length(cal.times.fwdbck)){
+	lines(x = gfwd$tsi, y = gfwd$density[[i]], typ='l', col=rgb(0,.5,0,0.1))
+}
+legend('topright',lwd = c(1,0),legend = c('forward','intrinsic'),pch=c(NA,16))
+
+
+plot(x=cal.times.fwdbck, y=G$fwd.mean, 
+	 xlim = c(0,horizon),
+	 main = 'Mean of the forward GI distribution\n at requested calendar times',
+	 xlab = 'calendar time', ylab='', 
+	 las = 1,
+	 typ='o')
+abline(h=GI_mean, lty=2)
+grid()
+plot(x=cal.times.fwdbck, y=G$bck.mean, 
+	 xlim = c(0,horizon),
+	 main = 'Mean of the forward GI distribution\n at requested calendar times',
+	 xlab = 'calendar time', ylab='', 
+	 las = 1,
+	 typ='o')
+abline(h=GI_mean, lty=2)
+grid()
+```
+
+
 
 
 
@@ -129,8 +260,11 @@ In an epidemic investigation of an on-going outbreak, contact tracing typically 
 Hence, for a mathematical model used to analyze this outbreak, if contact tracing data is available and the modeller is willing to fit this model to such data, it is important to fit the _backward_ generation interval (not the intrinsic, as may happen with a naive approach).
 
 
-```{r, fig.show='hold',fig.cap = "Your figure caption."}
 
-# TO DO 
+```{r}
+
+
+
+
 ```
 

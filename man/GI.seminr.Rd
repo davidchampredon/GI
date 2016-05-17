@@ -142,11 +142,11 @@ for(i in 1:length(g.bck$tsi)) lines(x=g.bck$tsi[[i]],g.bck$density[[i]])
 fbar <- g[['fwd.mean']]
 plot(cal.times.fwdbck,fbar,typ='o', 
 	 main = 'Mean of the forward generation interval distribution',
-	 xlab = 'time since infection', ylab ='')
+	 xlab = 'calendar time', ylab ='')
 
 bbar <- g[['bck.mean']]
 plot(cal.times.fwdbck,bbar,typ='o',
 	 main = 'Mean of the backward generation interval distribution',
-	 xlab = 'time since infection', ylab ='')
+	 xlab = 'calendar time', ylab ='')
 
 }

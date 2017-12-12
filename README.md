@@ -1,5 +1,5 @@
 # GI
-R package to calculate generation interval distributions.
+R package to calculate generation interval distributions and fit epidemiological models to contact tracing data.
 
 See [1] for theoretical framework. 
 

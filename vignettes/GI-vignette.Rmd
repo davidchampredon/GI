@@ -260,81 +260,99 @@ grid()
 In an epidemic investigation of an on-going outbreak, contact tracing typically provides _backward_ generation interval: an infectee was infected at time $t_1$ and her identified infector was infected at time $t_0$. The backward generation interval is simply $t_1-t_0$.
 Hence, for a mathematical model used to analyze this outbreak, if contact tracing data is available and the modeller is willing to fit this model to such data, it is important to fit the _backward_ generation interval (not the intrinsic, as may happen with a naive approach).
 
-First, let's assume we want to work with a RESuDe model that we want to fit to generation intervals collected from an epidemiological investigation. As mentioned above, these intervals are typically calculated backward in time.
+### Generating simulated data
 
-Let's setup these observed generation intervals:
+First, we simulate data from a fully known model and add a layer of observation error on the backward GIs. Here we use a SEmInR model to generate the data:
 ```{r}
+set.seed(12345)
+
+# Simulate 'true' data from a SEmInR model:
+R0.true <- 3
+dt <- 0.25
+hz <- 100
+nE <- nI <- 4
+latent_mean <- 2
+infectious_mean <- 4
+
 # Calendar times when the GI were observed:
-t.obs <- c(6,7,10,21,25,40,40,45,47,47,47,47,55,59,59,59)
-# GI at the associated calendar times:
-gi.obs <- c(5,6,8,9,10,7,9,9,11,9,10,11,11,10,11,12)
+t.obs <- sort(sample(x = 1:(hz/2), 
+                     size = 30, 
+                     replace = TRUE))
+
+# "True" model:
+G.true <- GI.seminr(latent_mean = latent_mean,
+                    infectious_mean = infectious_mean, 
+                    R0 = R0.true, 
+                    nE = nE, 
+                    nI = nI,
+                    cal.times.fwdbck = t.obs,
+                    horizon = hz, 
+                    dt = dt)
+
+# Retrieve the mean backward GI from the "true" model:
+gibck.true <-  G.true$bck.mean
+
+# Imperfectly observed GI at the associated calendar times.
+# Assume the ovservation error process is Poisson-distributed:
+gi.obs <- rpois(n = length(gibck.true),lambda = gibck.true)
+gi.obs[gi.obs==0] <- 1
+
 ```
 
-Now, we setup the model. For this simple example, assume the _intrinsic_ generation interval is Poisson distributed and there is no heterogeneous mixing ($\alpha=0$) and no interventions modelled ($\kappa=0$). We want to fit $\mathcal{R}_0$ and the mean of the intrinsic generation interval to the observed data.
-Thus, we have to calculate the _backward_ generation interval distributions at the observation times and match, for example, its mean to the data. Here, we'll just use a least-square approach to keep things simple for this vignette, but more elaborate fitting techniques (with likelihood for example) are warranted.
-
-Define the error function to minimize
-```{r}
-err.fct <- function(x, t.obs, gi.obs) {
-	R0 <- x['R0']
-	m  <- x['gimean']
-	tu <- unique(t.obs)
-	
-	G <- GI.resude(cal.times.fwdbck = tu,
-				R0,
-				alpha = 0,
-				kappa = 0,
-				GI_span = 20,
-				GI_mean = m,
-				GI_var = NA,
-				GI_type = 'pois',
-				horizon = 200)
-
-	gbckmean <- G$bck.mean 
-	
-	dat.obs <- ddply(data.frame(t.obs,gi.obs),"t.obs", summarize, m=mean(gi.obs),n=length(gi.obs))
-	# error is weighted by the number of observations:
-	err <- sqrt(sum( dat.obs$n * (gbckmean - dat.obs$m)^2 )/sum(dat.obs$n))
-}
-```
-
-Now run a minimizer on this function in order to find the best values that fit the data:
-```{r}
-fit <- optim(par = c(R0=2, gimean=9),  # starting values
-			 fn = err.fct,
-			 t.obs=t.obs, gi.obs=gi.obs)
-# Fitted parameters:
-fitted.prm <- fit$par
-print(fitted.prm)
-```
-
-Finally, let's visually check how good the fit is:
-```{r,fig.width=7, fig.height=6}
-tu <- unique(t.obs)
-Gfit <- GI.resude(cal.times.fwdbck = tu,
-				R0 = fitted.prm['R0'],
-				alpha = 0,
-				kappa = 0,
-				GI_span = 20,
-				GI_mean = fitted.prm['gimean'],
-				GI_var = NA,
-				GI_type = 'pois',
-				horizon = 200)
-
-gbck.fit <- Gfit$bck.mean
-
-plot(x = tu, y = gbck.fit, 
-	 ylim = range(gbck.fit,gi.obs),
-	 typ='o', pch=16,lwd=3,
-	 las = 1, xlab = 'calendar time', ylab='days',
-	 main = 'RESuDe model fitted to contact tracing data')
-points(t.obs, gi.obs, pch=3, col='red',lwd=6,cex=2)
+After generating the data, we have the following "observed" backward GIs:
+```{r, fig.width=5,fig.height=6, echo=FALSE}
+par(mfrow=c(1,1))
+# plot(x=1:length(G.true$incidence) * dt, 
+#      y=G.true$incidence, 
+#      typ='l', xlab='day',ylab='incidence') ; grid()
+plot(t.obs, gibck.true, 
+     typ='l',
+     lty = 2,
+     las = 1,
+     xlab = 'calendar time',
+     ylab = 'Backward GI',
+     ylim=range(c(0,gibck.true,gi.obs)))
 grid()
-legend('topleft', legend = c('data','model fit'),col=c('red','black'),pch=c(3,16),lwd=c(NA,3),pt.cex = c(1,1), pt.lwd = c(6,1))
+points(x=t.obs, y=gi.obs, pch=16)
+legend(x = 'topleft', 
+       pch = c(NA,16), 
+       lty = c(2,NA),
+       legend = c('Simulated mean bckwd GI', 'Observed'))
 ```
 
+The function `gi_ct_fit` provides a convienent way to fit the basic reproductive number ($R_0$) and the mean _intrinsic_ generation interval ($\bar{g}$) of an epidemiological model to observed backward GIs. It is implemented to fit two types of epidemiological models, the SEmInR and RESuDe (both defined earlier in this vignette). 
+The fit is done holding all other parameters of the model constant. Hence we need to define the fixed parameters, for each model:
+```{r}
+# Model fixed parameters (not fitted):
+fxd.prm.seminr <- list(horizon=hz, nE=nE, nI=nI, latent_mean=latent_mean, dt=dt)
+fxd.prm.resude <- list(horizon=hz, alpha=0, kappa=0, GI_span=20, 
+                       GI_var=NULL, GI_type='pois', dt=dt)
+```
 
+Next, we need to specify the range of values explored for $R_0$ and $\bar{g}$. The fitting algorithm is simply going to explore the parameter space defined, and construct a likelihood surface from which the minimum and the confidence intervals will be extracted. 
+```{r, fig.width=6, fig.height=6}
+R0.rng     <- seq(1, 6, by=0.25)
+gimean.rng <- seq(2, 8, by=0.5)
+CI <- 0.95
+do.plot <- TRUE
 
+# Run fit for both SEmInR and RESuDe models:
+fit.seminr <- gi_ct_fit(t.obs = t.obs,
+          gi.obs = gi.obs,
+          model.epi = 'seminr',
+          fxd.prm = fxd.prm.seminr,
+          R0.rng = R0.rng,
+          gimean.rng = gimean.rng,
+          CI = CI,
+          do.plot = do.plot)
 
-
+fit.resude <- gi_ct_fit(t.obs = t.obs, 
+          gi.obs = gi.obs, 
+          model.epi = 'resude', 
+          fxd.prm = fxd.prm.resude,
+          R0.rng = R0.rng, 
+          gimean.rng = gimean.rng,
+          CI = CI,
+          do.plot = do.plot)
+```
 

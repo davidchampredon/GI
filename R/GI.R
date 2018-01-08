@@ -95,11 +95,18 @@ GI.fwd.discrete <- function(time.s, g, GI_span, S) {
 #' 
 GI.bck.discrete <- function(time.t, g, GI_span, I) {
 	gbck <- vector()
-	for (tau in 1:min(GI_span, time.t - 1)) {
+	# if time.t is of type "numeric" 
+	# some rounding issues may occur which
+	# jeopardizes taking vector elements (e.g., I[time.t - k]).
+	# Hence, force the type to integer:
+	time.t <- as.integer(time.t) 
+	
+	for (tau in 1:min(GI_span, time.t - 1) ) {
 		tmp <- 0
 		kmax <- min(length(g), time.t - 1)
-		for (k in 1:kmax)
+		for (k in 1:kmax){
 			tmp <- tmp + g[k] * I[time.t - k]
+		}
 		gbck[tau] <- g[tau] * I[time.t - tau] / tmp
 	}
 	return(gbck)

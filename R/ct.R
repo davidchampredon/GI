@@ -194,7 +194,7 @@ gi_ct_fit <- function(t.obs,
                        gimean.ci)
         
         if(!is.null(R0.true) & !is.null(gimean.true)){
-            point(x= R0.true, y = gimean.true, col='blue', cex=3, pch=9)
+            points(x= R0.true, y = gimean.true, col='blue', cex=3, pch=9)
             text(x= R0.true, y = gimean.true, col='blue', labels = 'true', pos = 3)
         }
         

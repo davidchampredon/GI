@@ -336,15 +336,7 @@ gimean.rng <- seq(2, 8, by=0.5)
 CI <- 0.95
 do.plot <- TRUE
 
-# Run fit for both SEmInR and RESuDe models:
-fit.seminr <- gi_ct_fit(t.obs = t.obs,
-          gi.obs = gi.obs,
-          model.epi = 'seminr',
-          fxd.prm = fxd.prm.seminr,
-          R0.rng = R0.rng,
-          gimean.rng = gimean.rng,
-          CI = CI,
-          do.plot = do.plot)
+# Run fit RESuDe models:
 
 fit.resude <- gi_ct_fit(t.obs = t.obs, 
           gi.obs = gi.obs, 
@@ -354,5 +346,99 @@ fit.resude <- gi_ct_fit(t.obs = t.obs,
           gimean.rng = gimean.rng,
           CI = CI,
           do.plot = do.plot)
+```
+
+```{r, echo=FALSE}
+# TOO SLOW
+
+# fit.seminr <- gi_ct_fit(t.obs = t.obs,
+#           gi.obs = gi.obs,
+#           model.epi = 'seminr',
+#           fxd.prm = fxd.prm.seminr,
+#           R0.rng = R0.rng,
+#           gimean.rng = gimean.rng,
+#           CI = CI,
+#           do.plot = do.plot)
+
+```
+
+## Contact-tracing data example #2
+
+In this example, the backward generation interval data are simulated with an individual based model. 
+We use the pre-simulated data stored as `sim_gi` in this package. The model used to simulate this data set is wrapped in a R package and can be downloaded at https://github.com/davidchampredon/seminribm .
+
+```{r}
+data('sim_gi', package = 'GI')
+```
+
+We add imperfect observations:  
+```{r, fig.width=6, fig.height=6, message=FALSE}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+# Not all infection events are observed:
+prop.observed <- 0.1  # proportion of GIs observed
+n.obs <- round(prop.observed*nrow(sim_gi))  # number of bckwd GIs observed
+idx.obs <- sample(x = 1:length(sim_gi$b), 
+                  size = n.obs, replace = FALSE)
+gi.obs.true <- sim_gi$b[idx.obs]
+at.obs <- sim_gi$at[idx.obs]
+
+# Add observation error:
+gi.obs <- rnorm(n = n.obs, mean = gi.obs.true, sd = 0.5)
+gi.obs[gi.obs<1] <- 1
+gi.obs <- round(gi.obs)
+
+# Plot 'true' vs observed GI:
+plot(gi.obs.true, gi.obs, las=1,
+     main = 'observation error for backward GI')
+grid()
+abline(a = 0,b=1, lty=2)
+
+# plot observed GIs as function of infectee's acquisition time:
+data.frame(at.obs, gi.obs) %>%
+    mutate(rt = round(at.obs))%>%
+    group_by(rt) %>%
+    summarise(gi.obs_mean = mean(gi.obs)) %>%
+    ggplot(aes(x=rt,y=gi.obs_mean)) + 
+    geom_point(data = df.b, 
+               aes(x=at.obs,y=gi.obs), 
+               alpha=0.15, colour="orange",
+               pch=16,size=4) +
+    geom_abline(slope = 1, intercept = 0, linetype=2, colour = "grey")+
+    geom_line(size=1.5) + 
+    geom_point(size=2) +
+    ggtitle('Observed backward Generation Intervals (line: daily mean)')+
+    xlab('calendar time')+ylab('days')
+
+```
+
+The fit is now performed:
+
+```{r, fig.width=6, fig.height=6}
+fxd.prm.resude <- list(horizon=horizon, 
+                       alpha=0, kappa=0, 
+                       GI_span=20, 
+                       GI_var=NULL, 
+                       GI_type='pois', 
+                       dt=1.0)
+
+R0.rng     <- seq(1, 6, by=0.25)
+gimean.rng <- seq(2, 8, by=0.5)
+CI <- 0.95
+do.plot <- TRUE
+
+fit.resude <- gi_ct_fit(t.obs = at.obs, 
+                        gi.obs = gi.obs, 
+                        model.epi = 'resude', 
+                        fxd.prm = fxd.prm.resude,
+                        R0.rng = R0.rng, 
+                        gimean.rng = gimean.rng,
+                        CI = CI,
+                        do.plot = do.plot,
+                        R0.true = 3,
+                        gimean = 4)
+
 ```
 

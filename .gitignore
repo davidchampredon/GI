@@ -8,3 +8,6 @@ inst/doc
 
 *.rdb
 
+
+
+vignettes/GI-vignette.html

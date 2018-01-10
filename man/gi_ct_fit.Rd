@@ -5,7 +5,7 @@
 \title{Fit R0 and mean generation interval from contact tracing data}
 \usage{
 gi_ct_fit(t.obs, gi.obs, model.epi, fxd.prm, R0.rng, gimean.rng, CI = 0.95,
-  do.plot = FALSE)
+  do.plot = FALSE, R0.true = NULL, gimean.true = NULL)
 }
 \arguments{
 \item{t.obs}{Numeric vector. Time when the backward generation intervals were observed}
@@ -23,6 +23,10 @@ gi_ct_fit(t.obs, gi.obs, model.epi, fxd.prm, R0.rng, gimean.rng, CI = 0.95,
 \item{CI}{Numeric. Confidence interval level. Default = 0.95.}
 
 \item{do.plot}{Boolean. Fitting diagnostic plots. Default = TRUE.}
+
+\item{R0.true}{Numeric. Value of the 'true' (simulated) R0}
+
+\item{gimean.true}{Numeric. Value of the 'true' (simulated) mean GI}
 }
 \description{
 Fit R0 and mean generation interval from contact tracing data

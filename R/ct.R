@@ -129,6 +129,8 @@ plot_nllk_surf <- function(model.epi,
 #' @param gimean.rng Numeric vector. Values of mean intrinsic GI explored to calculate the likelihood surface.
 #' @param CI Numeric. Confidence interval level. Default = 0.95.
 #' @param do.plot Boolean. Fitting diagnostic plots. Default = TRUE.
+#' @param R0.true Numeric. Value of the 'true' (simulated) R0
+#' @param gimean.true Numeric. Value of the 'true' (simulated) mean GI
 #' @export
 gi_ct_fit <- function(t.obs, 
                       gi.obs, 
@@ -137,7 +139,9 @@ gi_ct_fit <- function(t.obs,
                       R0.rng, 
                       gimean.rng,
                       CI = 0.95,
-                      do.plot = FALSE ) {
+                      do.plot = FALSE,
+                      R0.true = NULL,
+                      gimean.true = NULL) {
     
     t1 <- as.numeric(Sys.time())
     
@@ -188,6 +192,11 @@ gi_ct_fit <- function(t.obs,
                        gimean.best,
                        R0.ci,
                        gimean.ci)
+        
+        if(!is.null(R0.true) & !is.null(gimean.true)){
+            point(x= R0.true, y = gimean.true, col='blue', cex=3, pch=9)
+            text(x= R0.true, y = gimean.true, col='blue', labels = 'true', pos = 3)
+        }
         
         # Reorder data, because "GI.resude" expects so:
         idx2 <- order(t.obs)

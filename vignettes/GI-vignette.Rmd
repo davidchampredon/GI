@@ -397,8 +397,10 @@ grid()
 abline(a = 0,b=1, lty=2)
 
 # plot observed GIs as function of infectee's acquisition time:
-data.frame(at.obs, gi.obs) %>%
-    mutate(rt = round(at.obs))%>%
+df.b <- data.frame(at.obs, gi.obs) %>%
+    mutate(rt = round(at.obs))
+
+df.b %>%
     group_by(rt) %>%
     summarise(gi.obs_mean = mean(gi.obs)) %>%
     ggplot(aes(x=rt,y=gi.obs_mean)) + 

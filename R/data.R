@@ -18,6 +18,9 @@
 #' doExact         <- FALSE
 #' timeStepTauLeap <- 0.1
 #' rnd_seed        <- 1234
+#' 
+#' @docType data
+#' @usage data(sim_gi)
 #'
 #' @format A data frame with 4749 rows (=infection events) and 3 variables:
 #' \describe{

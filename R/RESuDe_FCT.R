@@ -1,14 +1,19 @@
-################################################
+###
 ###   Functions for Renewal Equation
 ###   with Susceptible Depletion (RESuDe)
 ###
 ###   Author: David Champredon
 ###
-################################################
-
-
-### Discrete generation interval distribution
 ###
+
+
+#' Internal function. Discrete generation interval distribution.
+#' @param type String. Name of the distribution family for the GI. Implemented: \code{'pois'} or  \code{'nbinom'}
+#' @param mean Numeric. Mean of the GI
+#' @param var Numeric. Variance of the GI
+#' @param span Numeric. Maximum value for the GI
+#' @param x Numeric. Values where the GI must be calculated.
+#' @return GI density distribution.
 gi.distrib <- function(type,mean,var,span,x){
 	res <- NULL
 	if(type == 'pois') res <- dpois(x = x,lambda = mean)
@@ -20,11 +25,18 @@ gi.distrib <- function(type,mean,var,span,x){
 }
 
 
-### Simulation with RESuDe
-### W a r n i n g: this implementation is deterministic
-### because its use is to calculate generation
-### interval distributions
-###
+#' Internal function. Simulation with the Renewal Equation with Susceptible Depletion (RESuDe).
+#' W a r n i n g: this implementation is deterministic because its use is to calculate generation interval distributions
+#' @param pop_size Numeric. Population size.
+#' @param I.init Numeric. Inial number of infectious individuals.
+#' @param R0 Numeric. Basic reprocdution number.
+#' @param alpha Numeric. Heterogeneous mixing parameter.
+#' @param kappa Numeric. Intervention parameter.
+#' @param GI_span Numeric. Maximum value for GI
+#' @param GI_mean Numeric. Mean for GI
+#' @param GI_var Numeric. Variance for GI
+#' @param GI_type String. Type of distribution for the GI. \code{'pois'} or  \code{'nbinom'}\
+#' @param horizon Numeric. Time horizon of the simulation.
 RESuDe.simulate <- function(pop_size, 
 							I.init,
 							R0, 
